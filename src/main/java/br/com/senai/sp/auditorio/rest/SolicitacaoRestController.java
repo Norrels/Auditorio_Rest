@@ -30,26 +30,26 @@ import br.com.senai.sp.auditorio.repository.SolicitacaoRepository;
 @RestController
 @RequestMapping("api/solic")
 public class SolicitacaoRestController {
-	
+
 	@Autowired
 	private SolicitacaoRepository repSolicitacao;
-	
+
 	@Autowired
 	private EventoRepository repEvento;
-	
+
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public Iterable<Solicitacao> getSolicitacao() {
 		return repSolicitacao.findAll();
 	}
-	
+
 	@RequestMapping(value = "semId/{id}", method = RequestMethod.GET)
 	public Iterable<Solicitacao> getSolicitacaoSemCertoId(@PathVariable("id") Long id) {
 		return repSolicitacao.buscarSemCertoId(id);
 	}
-	
-	
+
 	/**
 	 * Método utilizado para buscar uma solicitação por id
+	 * 
 	 * @param idSolicitacao
 	 * @return Um evento referente ao Id
 	 */
@@ -63,9 +63,10 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
-	
+
 	/**
 	 * Método utilizado para lista as solicitações por pagina
+	 * 
 	 * @param page
 	 * @return Um Json com 7 eventos
 	 */
@@ -75,21 +76,25 @@ public class SolicitacaoRestController {
 		Page<Solicitacao> pagina = repSolicitacao.findAll(pageable);
 		return ResponseEntity.ok(pagina);
 	}
-	
+
 	/**
 	 * Método utilizado no auto complete do buscar no front
+	 * 
 	 * @return Um json com todos usuarios só com o nome é a data
 	 */
 	@RequestMapping(value = "/autocomplete", method = RequestMethod.GET)
 	public Iterable<Solicitacao> autoComplete() {
 		return repSolicitacao.autoComplete();
 	}
-	
-	@RequestMapping(value = "/buscar/palavra/{palavra-chave}", method = RequestMethod.GET)
-	public Iterable<Solicitacao> buscar(@PathVariable("palavra-chave") String palavra) {
-		return repSolicitacao.buscarPorText(palavra);
+
+	@RequestMapping(value = "/buscar/palavra/{palavra-chave}/{page}", method = RequestMethod.GET)
+	public ResponseEntity<Object> buscar(@PathVariable("palavra-chave") String palavra,
+			@PathVariable("pagina") int page) {
+		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
+		Page<Solicitacao> pagina = repSolicitacao.buscarPorText(palavra, pageable);
+		return ResponseEntity.ok(pagina);
 	}
-	
+
 	@RequestMapping(value = "/aprovar/{id}", method = RequestMethod.POST)
 	public ResponseEntity<Object> setAprovado(@PathVariable("id") Long id) {
 		boolean four = false;
@@ -114,7 +119,8 @@ public class SolicitacaoRestController {
 		if (four) {
 			Evento e = new Evento();
 			try {
-				e.setSolicitacao(solic.getTitle(), solic.getPeriodo(), solic.getStart(), solic.getDescription(), solic.getColor(), solic.getUsuario());
+				e.setSolicitacao(solic.getTitle(), solic.getPeriodo(), solic.getStart(), solic.getDescription(),
+						solic.getColor(), solic.getUsuario());
 				repEvento.save(e);
 				solic.setStatus("1");
 				repSolicitacao.save(solic);
@@ -127,26 +133,27 @@ public class SolicitacaoRestController {
 			}
 		}
 
-		if(solic.getStatus().equals("2")) {
+		if (solic.getStatus().equals("2")) {
 			Evento e = new Evento();
 			try {
-				e.setSolicitacao(solic.getTitle(), solic.getPeriodo(), solic.getStart(), solic.getDescription(), solic.getColor(), solic.getUsuario());
+				e.setSolicitacao(solic.getTitle(), solic.getPeriodo(), solic.getStart(), solic.getDescription(),
+						solic.getColor(), solic.getUsuario());
 				repEvento.save(e);
-				
+
 				solic.setStatus("1");
 				repSolicitacao.save(solic);
 				return ResponseEntity.ok(e);
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				Erro error = new Erro(HttpStatus.INTERNAL_SERVER_ERROR,
-						"Contate o Suporte, não foi possivel deletar", e.getClass().getName());
+				Erro error = new Erro(HttpStatus.INTERNAL_SERVER_ERROR, "Contate o Suporte, não foi possivel deletar",
+						e.getClass().getName());
 				return new ResponseEntity<Object>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 			}
 		} else {
 			return new ResponseEntity<Object>(HttpStatus.IM_USED);
 		}
 	}
-	
+
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> criarEvento(@RequestBody Solicitacao sol) {
 		int cont = 0;
@@ -157,9 +164,10 @@ public class SolicitacaoRestController {
 		try {
 			for (Solicitacao qtd : repSolicitacao.findByStart(sol.getStart())) {
 				// Deleta os outros eventos, ao salvar um evento com todo periodo
-				if (sol.getPeriodo().equals("4") || !sol.getStatus().equals("0")) {
+				if (sol.getPeriodo().equals("4") && !sol.getStatus().equals("0")) {
 					try {
-						System.out.println("Passou aquii");
+
+						System.out.println("Passou aquii" + "" + sol.getPeriodo());
 						repSolicitacao.deleteById(qtd.getId());
 						four = true;
 					} catch (Exception e) {
@@ -178,7 +186,7 @@ public class SolicitacaoRestController {
 				cont++;
 			}
 			for (Evento qtd : repEvento.findByStart(sol.getStart())) {
-				if(qtd.getPeriodo().equals(sol.getPeriodo())) {
+				if (qtd.getPeriodo().equals(sol.getPeriodo())) {
 					return new ResponseEntity<Object>(HttpStatus.IM_USED);
 				}
 			}
@@ -247,18 +255,16 @@ public class SolicitacaoRestController {
 		boolean ent = false;
 
 		if (sol.getId() > 0) {
+			System.err.println("Tem id !" + sol.getId());
 			if (solDB.getStart().equals(sol.getStart())) {
 				System.out.println("Entoru no if do teste fazer oq");
 				int cont = 0;
 				int iguais = 0;
 				System.out.println("Passou aqui ! 1");
-				
-					
-				
+
 				try {
 					for (Solicitacao qtd : repSolicitacao.findByStart(sol.getStart())) {
-
-						if (sol.getPeriodo().equals("4")) {
+						if (sol.getPeriodo().equals("4") && !qtd.getPeriodo().equals("4")) {
 							try {
 								repSolicitacao.deleteById(qtd.getId());
 								four = true;
@@ -275,8 +281,9 @@ public class SolicitacaoRestController {
 					}
 
 					if (four) {
-						repSolicitacao.save(sol);
+
 						try {
+							repSolicitacao.save(sol);
 							return ResponseEntity.ok().build();
 						} catch (Exception error) {
 							System.out.println(error);
@@ -287,25 +294,28 @@ public class SolicitacaoRestController {
 					}
 
 					if (cont <= 2) {
-						for (Solicitacao periodo : repSolicitacao.findByStartAndPeriodo(sol.getStart(), sol.getPeriodo())) {
+						for (Solicitacao periodo : repSolicitacao.findByStartAndPeriodo(sol.getStart(),
+								sol.getPeriodo())) {
 							System.out.println(periodo.getId() + " ID e ID do front : " + sol.getId());
 							if (periodo.getPeriodo().equals(sol.getPeriodo()) && periodo.getId().equals(sol.getId())) {
 								iguais = 0;
 								break;
 							}
-							if (periodo.getId() == sol.getId() && periodo.getPeriodo().equals(sol.getPeriodo()) && periodo.getTitle().equals(sol.getTitle()) && periodo.getDescription().equals(sol.getDescription())) {
+							if (periodo.getId() == sol.getId() && periodo.getPeriodo().equals(sol.getPeriodo())
+									&& periodo.getTitle().equals(sol.getTitle())
+									&& periodo.getDescription().equals(sol.getDescription())) {
 								iguais++;
 								System.out.println("Passou " + iguais);
 								break;
 							} else if (!(periodo.getId() == sol.getId())) {
-								if(periodo.getPeriodo().equals(sol.getPeriodo())) {
+								if (periodo.getPeriodo().equals(sol.getPeriodo())) {
 									iguais++;
 									System.out.println("Passou " + iguais);
 									break;
 								}
 							}
 						}
-						
+
 						if (iguais == 1) {
 							Erro error = new Erro(HttpStatus.CONFLICT, "Número Excedido", "MAXIMUM");
 							return new ResponseEntity<Object>(error, HttpStatus.CONFLICT);
@@ -340,26 +350,22 @@ public class SolicitacaoRestController {
 			} else {
 
 				System.out.println("Passou aqui teste 18:26");
-				
+
 				int cont = 0;
 				boolean tlz = false;
 				try {
 					for (Solicitacao qtd : repSolicitacao.findByStart(sol.getStart())) {
-						System.out.println("!1111");
+						System.err.println("!1111");
 						/*
-						if(!(e.getTitle() == qtd.getTitle() || e.getDescription() == qtd.getTitle())){
-							try {
-								repository.save(e);
-								return ResponseEntity.ok().build();
-							} catch (Exception error) {
-								error.printStackTrace();
-								Erro err = new Erro(HttpStatus.INTERNAL_SERVER_ERROR, "Contate o Suporte",
-										error.getClass().getName());
-								return new ResponseEntity<Object>(err, HttpStatus.INTERNAL_SERVER_ERROR);
-							}
-						}
-						*/
-						if (sol.getPeriodo().equals("4")) {
+						 * if(!(e.getTitle() == qtd.getTitle() || e.getDescription() ==
+						 * qtd.getTitle())){ try { repository.save(e); return
+						 * ResponseEntity.ok().build(); } catch (Exception error) {
+						 * error.printStackTrace(); Erro err = new
+						 * Erro(HttpStatus.INTERNAL_SERVER_ERROR, "Contate o Suporte",
+						 * error.getClass().getName()); return new ResponseEntity<Object>(err,
+						 * HttpStatus.INTERNAL_SERVER_ERROR); } }
+						 */
+						if (sol.getPeriodo().equals("4") && !qtd.getPeriodo().equals("4")) {
 							try {
 								repSolicitacao.deleteById(qtd.getId());
 								four = true;
@@ -367,7 +373,7 @@ public class SolicitacaoRestController {
 								error.printStackTrace();
 								System.out.println(error);
 								Erro erro = new Erro(HttpStatus.INTERNAL_SERVER_ERROR,
-										"Contate o Suporte, não foi possivel deletar",error.getClass().getName());
+										"Contate o Suporte, não foi possivel deletar", error.getClass().getName());
 								return new ResponseEntity<Object>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 							}
 						}
@@ -378,9 +384,22 @@ public class SolicitacaoRestController {
 							return new ResponseEntity<Object>(HttpStatus.IM_USED);
 						}
 						cont++;
+						System.err.println(cont);
+					}
+					if (four) {
+						try {
+							repSolicitacao.save(sol);
+							return ResponseEntity.ok().build();
+						} catch (Exception error) {
+							System.out.println(error);
+							Erro erro = new Erro(HttpStatus.INTERNAL_SERVER_ERROR,
+									"Contate o Suporte, não foi possivel salvar o evento", error.getClass().getName());
+							return new ResponseEntity<Object>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+						}
 					}
 					if (cont <= 2) {
-						for (Solicitacao periodo : repSolicitacao.findByStartAndPeriodo(sol.getStart(), sol.getPeriodo())) {
+						for (Solicitacao periodo : repSolicitacao.findByStartAndPeriodo(sol.getStart(),
+								sol.getPeriodo())) {
 							if (periodo.getPeriodo().equals(sol.getPeriodo()) && sol.getPeriodo().equals("4")) {
 								tlz = true;
 								break;
@@ -425,9 +444,10 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
-	
+
 	/**
 	 * Método utilizado para lista as tarefas por usuario
+	 * 
 	 * @param id
 	 * @return todas solicitações de um usuario
 	 */
@@ -435,7 +455,7 @@ public class SolicitacaoRestController {
 	public List<Solicitacao> buscaSolics(@PathVariable Long id) {
 		return repSolicitacao.findByIdUsuario(id);
 	}
-	
+
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Object> deletaTarefa(@PathVariable Long id) {
 		Solicitacao s = repSolicitacao.findById(id).get();
@@ -453,9 +473,9 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
-	
+
 	@RequestMapping(value = "reprovar/{id}", method = RequestMethod.PUT)
-	public ResponseEntity<Object> reprovarSolic (@PathVariable Long id) {
+	public ResponseEntity<Object> reprovarSolic(@PathVariable Long id) {
 		Solicitacao solic = repSolicitacao.findById(id).get();
 		solic.setStatus("0");
 		repSolicitacao.save(solic);
@@ -463,11 +483,9 @@ public class SolicitacaoRestController {
 	}
 
 	@RequestMapping(value = "buscar/{id}/page/{page}", method = RequestMethod.GET)
-	public ResponseEntity<Object> buscaSolicPagina (@PathVariable Long id, @PathVariable int page) {
+	public ResponseEntity<Object> buscaSolicPagina(@PathVariable Long id, @PathVariable int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
 		Page<Solicitacao> pagina = repSolicitacao.findByIdUsuarioPage(id, pageable);
 		return ResponseEntity.ok(pagina);
 	}
 }
-
-

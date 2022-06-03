@@ -118,6 +118,16 @@ public class EventoRestController {
 				}
 				cont++;
 			}
+			
+			for(Solicitacao soliq : repositorySolic.findByStart(evento.getStart())) {
+				if(soliq.getPeriodo().equals(evento.getPeriodo())) {
+					System.out.println("Entrou aqui 22222222222222222222222");
+					return new ResponseEntity<Object>(HttpStatus.IM_USED);
+				}
+				
+			}
+			
+			
 			if (four) {
 				try {
 					repository.save(evento);
@@ -187,9 +197,7 @@ public class EventoRestController {
 				int cont = 0;
 				int iguais = 0;
 				System.out.println("Passou aqui ! 1");
-				
-					
-				
+												
 				try {
 					for (Evento qtd : repository.findByStart(e.getStart())) {
 
@@ -204,9 +212,18 @@ public class EventoRestController {
 										"Contate o Suporte, não foi possivel deletar", e.getClass().getName());
 								return new ResponseEntity<Object>(error, HttpStatus.INTERNAL_SERVER_ERROR);
 							}
-
 						}
+						
 						cont++;
+						
+					}
+					
+					for(Solicitacao soliq : repositorySolic.findByStart(e.getStart())) {
+						if(soliq.getPeriodo().equals(e.getPeriodo())) {
+							System.out.println("Entrou aqui 22222222222222222222222");
+							return new ResponseEntity<Object>(HttpStatus.IM_USED);
+						}
+						
 					}
 
 					if (four) {
@@ -225,6 +242,7 @@ public class EventoRestController {
 						for (Evento periodo : repository.findByStartAndPeriodo(e.getStart(), e.getPeriodo())) {
 							System.out.println(periodo.getId() + " ID e ID do front : " + e.getId());
 							if (periodo.getPeriodo().equals(e.getPeriodo()) && periodo.getId().equals(e.getId())) {
+								System.out.println("Iguais = 0");
 								iguais = 0;
 								break;
 							}
@@ -281,19 +299,19 @@ public class EventoRestController {
 				try {
 					for (Evento qtd : repository.findByStart(e.getStart())) {
 						System.out.println("!1111");
-						/*
-						if(!(e.getTitle() == qtd.getTitle() || e.getDescription() == qtd.getTitle())){
-							try {
-								repository.save(e);
-								return ResponseEntity.ok().build();
-							} catch (Exception error) {
-								error.printStackTrace();
-								Erro err = new Erro(HttpStatus.INTERNAL_SERVER_ERROR, "Contate o Suporte",
-										error.getClass().getName());
-								return new ResponseEntity<Object>(err, HttpStatus.INTERNAL_SERVER_ERROR);
-							}
-						}
-						*/
+						
+//						if(!(e.getTitle() == qtd.getTitle() || e.getDescription() == qtd.getTitle())){
+//							try {
+//								repository.save(e);
+//								return ResponseEntity.ok().build();
+//							} catch (Exception error) {
+//								error.printStackTrace();
+//								Erro err = new Erro(HttpStatus.INTERNAL_SERVER_ERROR, "Contate o Suporte",
+//										error.getClass().getName());
+//								return new ResponseEntity<Object>(err, HttpStatus.INTERNAL_SERVER_ERROR);
+//							}
+//						}
+						
 						if (e.getPeriodo().equals("4")) {
 							try {
 								repository.deleteById(qtd.getId());
@@ -313,6 +331,17 @@ public class EventoRestController {
 							return new ResponseEntity<Object>(HttpStatus.IM_USED);
 						}
 						cont++;
+					}
+					if (four) {
+						repository.save(e);
+						try {
+							return ResponseEntity.ok().build();
+						} catch (Exception error) {
+							System.out.println(error);
+							Erro erro = new Erro(HttpStatus.INTERNAL_SERVER_ERROR,
+									"Contate o Suporte, não foi possivel salvar o evento", e.getClass().getName());
+							return new ResponseEntity<Object>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+						}
 					}
 					if (cont <= 2) {
 						for (Evento periodo : repository.findByStartAndPeriodo(e.getStart(), e.getPeriodo())) {
