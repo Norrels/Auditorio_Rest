@@ -170,22 +170,26 @@ public class UsuarioRestController {
 		// Retorna um usuario já cadastrado
 		Usuario usuario1 = repository.findByMatriculaAndAtivo(usuario.getMatricula(), true);
 		// Verifica se o usuário existe
-		usuario = repository.findByMatriculaAndDataNascimento(usuario.getMatricula(), usuario.getDataNascimento());
-
+		Usuario usuarioDB  = repository.findByMatriculaAndDataNascimento(usuario.getMatricula(), usuario.getDataNascimento());
+		
 		// Verifica se a matricula existe no banco
 		// se ela existe ele faz outra verificação
 		if (usuario != null) {
+			System.out.println("caiuu aqui");
 			// Se a matricula existe, ele verifica se a conta já foi cadastrada
 			if (usuario1 != null) {
 				return new ResponseEntity<Usuario>(HttpStatus.CONFLICT);
+			}else if (repository.findByMatricula(usuario.getMatricula()) == null) {
+				return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
+			}else if (repository.findByDataNascimento(usuario.getDataNascimento()) == null) {
+				return new ResponseEntity<Usuario>(HttpStatus.BAD_REQUEST);
 			} else {
-				return ResponseEntity.ok(usuario);
+			
+				System.out.println(usuario);
+				return ResponseEntity.ok(usuarioDB);
 			}
-		} else {
-			// Retorna um erro se a matricula não existe
-			return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
-		}
-
+		} else 
+				return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
 	}
 
 }

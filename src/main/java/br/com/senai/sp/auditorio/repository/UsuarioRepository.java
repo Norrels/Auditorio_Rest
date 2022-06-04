@@ -26,5 +26,10 @@ public interface UsuarioRepository extends PagingAndSortingRepository<Usuario, L
 	
 	@Query("SELECT u.nome, u.email, u.matricula FROM Usuario u WHERE u.tipoUsuario = 0")
 	public Iterable<Usuario> autoComplete ();
+	
+	public Usuario findByMatricula(String Matricula);
+	
+	public Usuario findByDataNascimento(String Data);
+
 
 }

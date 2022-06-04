@@ -25,17 +25,24 @@ public interface SolicitacaoRepository extends PagingAndSortingRepository<Solici
 	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s AND status = 2")
 	public List<Solicitacao> findByIdUsuario (@Param("s") Long id);
 	
+	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s")
+	public List<Solicitacao> findByIdUsuarioall (@Param("s") Long id);
+	
 	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s AND status = 2")
 	public Page<Solicitacao> findByIdUsuarioPage (@Param("s") Long id, Pageable page);
 	
 	@Query("SELECT e FROM Solicitacao e WHERE e.title LIKE %:t% or e.periodo LIKE %:t% or e.start LIKE %:t% or e.description LIKE %:t% or e.usuario.nome LIKE %:t%")
 	public Page<Solicitacao> buscarPorText (@Param("t") String palavra, Pageable page);
 	
-	@Query("SELECT e.title, e.start, usuario FROM Solicitacao e")
+	@Query("SELECT e.title, e.start, usuario.nome FROM Solicitacao e")
 	public Iterable<Solicitacao> autoComplete ();
+	
+	@Query("SELECT e.title, e.start, usuario.nome FROM Solicitacao e WHERE e.usuario.id = :id")
+	public Iterable<Solicitacao> autoCompleteByUser (@Param("id") Long id);
 	
 	@Query("SELECT s FROM Solicitacao s WHERE usuario.id != :s AND status = 2")
 	public List<Solicitacao> buscarSemCertoId (@Param("s") Long id);
 	
-	
+	@Query("SELECT e FROM Solicitacao e WHERE (e.usuario.id = :id) AND e.title LIKE %:t% or e.periodo LIKE %:t% or e.start LIKE %:t% or e.description LIKE %:t% or e.usuario.nome LIKE %:t%")
+	public Page<Solicitacao> buscarPorTextByUser (@Param("t") String palavra, Pageable page, @Param("id") Long id);
 }

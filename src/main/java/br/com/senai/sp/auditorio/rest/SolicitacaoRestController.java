@@ -86,12 +86,25 @@ public class SolicitacaoRestController {
 	public Iterable<Solicitacao> autoComplete() {
 		return repSolicitacao.autoComplete();
 	}
+	
+	@RequestMapping(value = "/autocomplete/{id}", method = RequestMethod.GET)
+	public Iterable<Solicitacao> autoCompleteByUser(@PathVariable("id") Long id) {
+		return repSolicitacao.autoCompleteByUser(id);
+	}
 
 	@RequestMapping(value = "/buscar/palavra/{palavra-chave}/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscar(@PathVariable("palavra-chave") String palavra,
-			@PathVariable("pagina") int page) {
+			@PathVariable("page") int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
 		Page<Solicitacao> pagina = repSolicitacao.buscarPorText(palavra, pageable);
+		return ResponseEntity.ok(pagina);
+	}
+	
+	@RequestMapping(value = "/buscar/{palavra-chave}/{user}/{page}", method = RequestMethod.GET)
+	public ResponseEntity<Object> buscarByProf(@PathVariable("palavra-chave") String palavra,
+			@PathVariable("page") int page, @PathVariable("user") Long id) {
+		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
+		Page<Solicitacao> pagina = repSolicitacao.buscarPorTextByUser(palavra, pageable, id);
 		return ResponseEntity.ok(pagina);
 	}
 
@@ -164,7 +177,7 @@ public class SolicitacaoRestController {
 		try {
 			for (Solicitacao qtd : repSolicitacao.findByStart(sol.getStart())) {
 				// Deleta os outros eventos, ao salvar um evento com todo periodo
-				if (sol.getPeriodo().equals("4") && !sol.getStatus().equals("0")) {
+				if (sol.getPeriodo().equals("4") && !sol.getStatus().equals("0") && !qtd.getPeriodo().equals("4")) {
 					try {
 
 						System.out.println("Passou aquii" + "" + sol.getPeriodo());
@@ -454,6 +467,11 @@ public class SolicitacaoRestController {
 	@RequestMapping(value = "buscar/{id}", method = RequestMethod.GET)
 	public List<Solicitacao> buscaSolics(@PathVariable Long id) {
 		return repSolicitacao.findByIdUsuario(id);
+	}
+	
+	@RequestMapping(value = "buscarSolic/{id}", method = RequestMethod.GET)
+	public List<Solicitacao> buscaSolicAll(@PathVariable Long id) {
+	return repSolicitacao.findByIdUsuarioall(id);
 	}
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
