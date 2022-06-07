@@ -29,7 +29,7 @@ public interface UsuarioRepository extends PagingAndSortingRepository<Usuario, L
 	
 	public Usuario findByMatricula(String Matricula);
 	
-	public Usuario findByDataNascimento(String Data);
+	public Usuario findByDataNascimentoAndId(String Data, Long id);
 
 
 }

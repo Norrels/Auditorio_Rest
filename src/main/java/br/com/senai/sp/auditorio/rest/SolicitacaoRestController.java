@@ -41,6 +41,13 @@ public class SolicitacaoRestController {
 	public Iterable<Solicitacao> getSolicitacao() {
 		return repSolicitacao.findAll();
 	}
+	
+	@RequestMapping(value = "/user/{id}/page/{page}", method = RequestMethod.GET)
+	public ResponseEntity<Object> getSolicitacaoById(@PathVariable("id") Long id, @PathVariable("page") int page) {
+		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
+		Page<Solicitacao> pagina = repSolicitacao.findByIdUsuarioall(id, pageable);
+		return ResponseEntity.ok(pagina);
+	}
 
 	@RequestMapping(value = "semId/{id}", method = RequestMethod.GET)
 	public Iterable<Solicitacao> getSolicitacaoSemCertoId(@PathVariable("id") Long id) {
@@ -100,7 +107,7 @@ public class SolicitacaoRestController {
 		return ResponseEntity.ok(pagina);
 	}
 	
-	@RequestMapping(value = "/buscar/{palavra-chave}/{user}/{page}", method = RequestMethod.GET)
+	@RequestMapping(value = "/buscar/palavra/{palavra-chave}/user/{user}/page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscarByProf(@PathVariable("palavra-chave") String palavra,
 			@PathVariable("page") int page, @PathVariable("user") Long id) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
@@ -133,7 +140,7 @@ public class SolicitacaoRestController {
 			Evento e = new Evento();
 			try {
 				e.setSolicitacao(solic.getTitle(), solic.getPeriodo(), solic.getStart(), solic.getDescription(),
-						solic.getColor(), solic.getUsuario());
+						solic.getColor(), solic.getUsuario(), solic);
 				repEvento.save(e);
 				solic.setStatus("1");
 				repSolicitacao.save(solic);
@@ -150,7 +157,7 @@ public class SolicitacaoRestController {
 			Evento e = new Evento();
 			try {
 				e.setSolicitacao(solic.getTitle(), solic.getPeriodo(), solic.getStart(), solic.getDescription(),
-						solic.getColor(), solic.getUsuario());
+						solic.getColor(), solic.getUsuario(), solic);
 				repEvento.save(e);
 
 				solic.setStatus("1");
@@ -468,11 +475,7 @@ public class SolicitacaoRestController {
 	public List<Solicitacao> buscaSolics(@PathVariable Long id) {
 		return repSolicitacao.findByIdUsuario(id);
 	}
-	
-	@RequestMapping(value = "buscarSolic/{id}", method = RequestMethod.GET)
-	public List<Solicitacao> buscaSolicAll(@PathVariable Long id) {
-	return repSolicitacao.findByIdUsuarioall(id);
-	}
+		
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Object> deletaTarefa(@PathVariable Long id) {
@@ -505,5 +508,10 @@ public class SolicitacaoRestController {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
 		Page<Solicitacao> pagina = repSolicitacao.findByIdUsuarioPage(id, pageable);
 		return ResponseEntity.ok(pagina);
+	}
+	
+	@RequestMapping(value = "status/{status}", method = RequestMethod.GET)
+	public List<Solicitacao> buscarPorStatus(@PathVariable String status){
+		return repSolicitacao.findByStatus(status);
 	}
 }

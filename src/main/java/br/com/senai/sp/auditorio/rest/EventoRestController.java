@@ -407,6 +407,8 @@ public class EventoRestController {
 		if (e.getId() > 0) {
 			try {
 				repository.deleteById(id);
+
+				repositorySolic.deleteById(e.getSolicitacao().getId());
 				return ResponseEntity.ok().build();
 			} catch (Exception e2) {
 				e2.printStackTrace();

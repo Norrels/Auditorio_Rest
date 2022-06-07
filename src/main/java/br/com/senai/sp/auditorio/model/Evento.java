@@ -5,6 +5,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 
 import lombok.Data;
 
@@ -21,14 +22,17 @@ public class Evento {
 	private String color;
 	@ManyToOne
 	private Usuario usuario;
+	@OneToOne
+	private Solicitacao solicitacao;
 	
-	public void setSolicitacao(String title, String periodo, String start, String description, String color, Usuario usuario) {
+	public void setSolicitacao(String title, String periodo, String start, String description, String color, Usuario usuario, Solicitacao sol) {
 		this.title = title;
 		this.periodo = periodo;
 		this.start = start;
 		this.description = description;
 		this.color = color;
 		this.usuario = usuario;
+		this.solicitacao = sol;
 	}
 	public Usuario getUsuario() {
 		return usuario;

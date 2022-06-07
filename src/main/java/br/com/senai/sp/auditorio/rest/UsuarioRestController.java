@@ -181,7 +181,9 @@ public class UsuarioRestController {
 				return new ResponseEntity<Usuario>(HttpStatus.CONFLICT);
 			}else if (repository.findByMatricula(usuario.getMatricula()) == null) {
 				return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
-			}else if (repository.findByDataNascimento(usuario.getDataNascimento()) == null) {
+				
+				// buscar retorna mais que 4 valores !
+			}else if (repository.findByDataNascimentoAndId(usuario.getDataNascimento(), usuarioDB.getId()) == null) {
 				return new ResponseEntity<Usuario>(HttpStatus.BAD_REQUEST);
 			} else {
 			
