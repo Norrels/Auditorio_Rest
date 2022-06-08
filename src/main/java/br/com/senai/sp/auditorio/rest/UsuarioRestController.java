@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
+import br.com.senai.sp.auditorio.annotation.Administrador;
 import br.com.senai.sp.auditorio.model.TipoDeUsuario;
 import br.com.senai.sp.auditorio.model.TokenJWT;
 import br.com.senai.sp.auditorio.model.Usuario;
@@ -48,6 +49,11 @@ public class UsuarioRestController {
 	public Iterable<Usuario> autoComplete (String palavra) {
 		return repository.autoComplete();
 	}
+	
+	@RequestMapping(value = "/autocompleteAdm", method = RequestMethod.GET)
+	public Iterable<Usuario> autoCompleteAdm (String palavra) {
+		return repository.autoCompleteAdm();
+	}
 
 	@RequestMapping(value = "", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Usuario> criarUsuario(@RequestBody Usuario usuario) {
@@ -69,11 +75,26 @@ public class UsuarioRestController {
 		Page<Usuario> pagina = repository.buscarPorText(palavra, pageable);
 		return ResponseEntity.ok(pagina);
 	}
+	
+	@RequestMapping(value = "/buscarAdm/{palavra-chave}/{pagina}", method = RequestMethod.GET)
+	public ResponseEntity<Object> buscarAdm(@PathVariable("palavra-chave") String palavra, @PathVariable("pagina") int page) {
+		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
+		Page<Usuario> pagina = repository.buscarPorTextAdm(palavra, pageable);
+		return ResponseEntity.ok(pagina);
+	}
 
-	@RequestMapping(value = "page/{id}", method = RequestMethod.GET)
-	public ResponseEntity<Object> getElementPages(@PathVariable("id") int page) {
+
+	@RequestMapping(value = "page/{page}", method = RequestMethod.GET)
+	public ResponseEntity<Object> getElementPages(@PathVariable("page") int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
 		Page<Usuario> pagina = repository.findByTipoUsuario(pageable, TipoDeUsuario.PROFESSOR);
+		return ResponseEntity.ok(pagina);
+	}
+	
+	@RequestMapping(value = "pageAdms/{page}", method = RequestMethod.GET)
+	public ResponseEntity<Object> getAdminstrador (@PathVariable("page") int page) {
+		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
+		Page<Usuario> pagina = repository.findByTipoUsuario(pageable, TipoDeUsuario.ADMINISTRADOR);
 		return ResponseEntity.ok(pagina);
 	}
 
@@ -192,6 +213,28 @@ public class UsuarioRestController {
 			}
 		} else 
 				return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
+	}
+	@Administrador
+	@RequestMapping(value = "/cadastrar", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Usuario> cadastrar(@RequestBody Usuario usuario){
+		
+		if(repository.findByMatricula(usuario.getMatricula()) == null && repository.findByEmail(usuario.getMatricula()) == null) {
+			try {
+				repository.save(usuario);
+				return new ResponseEntity<Usuario>(HttpStatus.CREATED);
+			} catch (Exception e) {
+				return new ResponseEntity<Usuario>(HttpStatus.BAD_REQUEST);
+			}
+		} else if(repository.findByMatricula(usuario.getMatricula()) != null) {
+			return new ResponseEntity<Usuario>(HttpStatus.CONFLICT);
+		} else 
+			return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
+	} 
+	
+	
+	@RequestMapping(value = "/email/adms", method = RequestMethod.GET)
+	public Iterable<Usuario> getAdmEmail() {
+		return repository.buscaEmailAdm();
 	}
 
 }

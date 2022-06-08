@@ -1,5 +1,7 @@
 package br.com.senai.sp.auditorio.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,12 +26,24 @@ public interface UsuarioRepository extends PagingAndSortingRepository<Usuario, L
 	@Query("SELECT u FROM Usuario u WHERE (u.tipoUsuario = 0) AND (u.nome LIKE %:t% or u.matricula LIKE %:t% or u.email LIKE %:t%)")
 	public Page<Usuario> buscarPorText (@Param("t") String usuario, Pageable page);
 	
+	@Query("SELECT u FROM Usuario u WHERE (u.tipoUsuario = 1) AND (u.nome LIKE %:t% or u.matricula LIKE %:t% or u.email LIKE %:t%)")
+	public Page<Usuario> buscarPorTextAdm (@Param("t") String usuario, Pageable page);
+	
 	@Query("SELECT u.nome, u.email, u.matricula FROM Usuario u WHERE u.tipoUsuario = 0")
 	public Iterable<Usuario> autoComplete ();
+	
+	@Query("SELECT u.nome, u.email, u.matricula FROM Usuario u WHERE u.tipoUsuario = 1")
+	public Iterable<Usuario> autoCompleteAdm ();
 	
 	public Usuario findByMatricula(String Matricula);
 	
 	public Usuario findByDataNascimentoAndId(String Data, Long id);
+	
+	@Query("Select u.email from Usuario u where u.tipoUsuario = 1")
+	public Iterable<Usuario> buscaEmailAdm();
+	
+	public Usuario findByEmail(String email);
+	
 
 
 }

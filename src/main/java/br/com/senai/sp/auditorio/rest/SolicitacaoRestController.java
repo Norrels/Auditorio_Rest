@@ -1,10 +1,18 @@
 package br.com.senai.sp.auditorio.rest;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jackson.JsonObjectSerializer;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,10 +27,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonParser;
+
 import br.com.senai.sp.auditorio.model.Erro;
 import br.com.senai.sp.auditorio.model.Evento;
 import br.com.senai.sp.auditorio.model.Solicitacao;
-import br.com.senai.sp.auditorio.model.Usuario;
 import br.com.senai.sp.auditorio.repository.EventoRepository;
 import br.com.senai.sp.auditorio.repository.SolicitacaoRepository;
 
@@ -176,6 +185,13 @@ public class SolicitacaoRestController {
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> criarEvento(@RequestBody Solicitacao sol) {
+		new Thread() {
+			public void run() {
+				executePost();
+			};
+			
+		}.start();
+		
 		int cont = 0;
 		boolean tlz = false;
 		boolean four = false;
@@ -514,4 +530,46 @@ public class SolicitacaoRestController {
 	public List<Solicitacao> buscarPorStatus(@PathVariable String status){
 		return repSolicitacao.findByStatus(status);
 	}
+	
+	public static String executePost() {
+		  HttpURLConnection connection = null;
+		  
+		  try {
+		    //Create connection
+		    URL url = new URL("https://emailapi-production.up.railway.app/send");
+		    connection = (HttpURLConnection) url.openConnection();
+		    connection.setRequestMethod("POST");
+		    connection.setRequestProperty("Content-Type", 
+		        "application/json");
+		    String jsonInputString = "{nome : Matheus, email : matheuus412@gmail.com}";	 		 		    
+		    connection.setRequestProperty("Accept", "application/json");
+		    connection.setRequestProperty("Content-Language", "en-US");  
+		    connection.setUseCaches(false);
+		    connection.setDoOutput(true);
+
+		    try(OutputStream os = connection.getOutputStream()) {
+		        byte[] input = jsonInputString.getBytes("utf-8");
+		        os.write(input, 0, input.length);			
+		    }
+
+		    //Get Response  
+		    InputStream is = connection.getInputStream();
+		    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+		    StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+		    String line;
+		    while ((line = rd.readLine()) != null) {
+		      response.append(line);
+		      response.append('\r');
+		    }
+		    rd.close();
+		    return response.toString();
+		  } catch (Exception e) {
+		    e.printStackTrace();
+		    return null;
+		  } finally {
+		    if (connection != null) {
+		      connection.disconnect();
+		    }
+		  }
+		}
 }
