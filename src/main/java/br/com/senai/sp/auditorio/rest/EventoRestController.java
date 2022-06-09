@@ -218,7 +218,7 @@ public class EventoRestController {
 						
 					}
 					
-					for(Solicitacao soliq : repositorySolic.findByStart(e.getStart())) {
+					for(Solicitacao soliq : repositorySolic.buscarSolicAndamentos(e.getStart())) {
 						if(soliq.getPeriodo().equals(e.getPeriodo())) {
 							System.out.println("Entrou aqui 22222222222222222222222");
 							return new ResponseEntity<Object>(HttpStatus.IM_USED);

@@ -24,6 +24,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
 import br.com.senai.sp.auditorio.annotation.Administrador;
+import br.com.senai.sp.auditorio.annotation.Suporte;
 import br.com.senai.sp.auditorio.model.TipoDeUsuario;
 import br.com.senai.sp.auditorio.model.TokenJWT;
 import br.com.senai.sp.auditorio.model.Usuario;
@@ -49,7 +50,7 @@ public class UsuarioRestController {
 	public Iterable<Usuario> autoComplete (String palavra) {
 		return repository.autoComplete();
 	}
-	
+	@Suporte
 	@RequestMapping(value = "/autocompleteAdm", method = RequestMethod.GET)
 	public Iterable<Usuario> autoCompleteAdm (String palavra) {
 		return repository.autoCompleteAdm();
@@ -214,21 +215,25 @@ public class UsuarioRestController {
 		} else 
 				return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
 	}
-	@Administrador
+
 	@RequestMapping(value = "/cadastrar", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Usuario> cadastrar(@RequestBody Usuario usuario){
+
+		if(repository.findByEmail(usuario.getEmail()) != null) {
+			return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
+		} else if(repository.findByMatricula(usuario.getMatricula()) != null) {
+			return new ResponseEntity<Usuario>(HttpStatus.CONFLICT);
+		} 
 		
-		if(repository.findByMatricula(usuario.getMatricula()) == null && repository.findByEmail(usuario.getMatricula()) == null) {
+		if(repository.findByMatricula(usuario.getMatricula()) == null || repository.findByEmail(usuario.getEmail()) == null) {
 			try {
 				repository.save(usuario);
 				return new ResponseEntity<Usuario>(HttpStatus.CREATED);
 			} catch (Exception e) {
 				return new ResponseEntity<Usuario>(HttpStatus.BAD_REQUEST);
 			}
-		} else if(repository.findByMatricula(usuario.getMatricula()) != null) {
-			return new ResponseEntity<Usuario>(HttpStatus.CONFLICT);
-		} else 
-			return new ResponseEntity<Usuario>(HttpStatus.UNPROCESSABLE_ENTITY);
+		}
+		return new ResponseEntity<Usuario>(HttpStatus.BAD_REQUEST);
 	} 
 	
 	

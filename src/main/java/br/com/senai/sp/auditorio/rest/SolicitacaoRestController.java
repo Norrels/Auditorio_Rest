@@ -32,8 +32,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import br.com.senai.sp.auditorio.model.Erro;
 import br.com.senai.sp.auditorio.model.Evento;
 import br.com.senai.sp.auditorio.model.Solicitacao;
+import br.com.senai.sp.auditorio.model.Usuario;
 import br.com.senai.sp.auditorio.repository.EventoRepository;
 import br.com.senai.sp.auditorio.repository.SolicitacaoRepository;
+import br.com.senai.sp.auditorio.repository.UsuarioRepository;
 
 @CrossOrigin
 @RestController
@@ -46,11 +48,14 @@ public class SolicitacaoRestController {
 	@Autowired
 	private EventoRepository repEvento;
 
+	@Autowired
+	private UsuarioRepository repUsuario;
+
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public Iterable<Solicitacao> getSolicitacao() {
 		return repSolicitacao.findAll();
 	}
-	
+
 	@RequestMapping(value = "/user/{id}/page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> getSolicitacaoById(@PathVariable("id") Long id, @PathVariable("page") int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
@@ -102,7 +107,7 @@ public class SolicitacaoRestController {
 	public Iterable<Solicitacao> autoComplete() {
 		return repSolicitacao.autoComplete();
 	}
-	
+
 	@RequestMapping(value = "/autocomplete/{id}", method = RequestMethod.GET)
 	public Iterable<Solicitacao> autoCompleteByUser(@PathVariable("id") Long id) {
 		return repSolicitacao.autoCompleteByUser(id);
@@ -115,7 +120,7 @@ public class SolicitacaoRestController {
 		Page<Solicitacao> pagina = repSolicitacao.buscarPorText(palavra, pageable);
 		return ResponseEntity.ok(pagina);
 	}
-	
+
 	@RequestMapping(value = "/buscar/palavra/{palavra-chave}/user/{user}/page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscarByProf(@PathVariable("palavra-chave") String palavra,
 			@PathVariable("page") int page, @PathVariable("user") Long id) {
@@ -185,13 +190,15 @@ public class SolicitacaoRestController {
 
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> criarEvento(@RequestBody Solicitacao sol) {
-		new Thread() {
-			public void run() {
-				executePost();
-			};
-			
-		}.start();
+		Usuario user = repUsuario.findById(sol.getUsuario().getId()).get();
 		
+//		 new Thread() { 
+//			 public void run() { 
+//				 executePost(user, sol); 
+//				 
+//			 }; }.start();
+//		 
+
 		int cont = 0;
 		boolean tlz = false;
 		boolean four = false;
@@ -222,7 +229,7 @@ public class SolicitacaoRestController {
 				cont++;
 			}
 			for (Evento qtd : repEvento.findByStart(sol.getStart())) {
-				if (qtd.getPeriodo().equals(sol.getPeriodo())) {
+				if (qtd.getPeriodo().equals(sol.getPeriodo()) || qtd.getPeriodo().equals("4")) {
 					return new ResponseEntity<Object>(HttpStatus.IM_USED);
 				}
 			}
@@ -422,6 +429,11 @@ public class SolicitacaoRestController {
 						cont++;
 						System.err.println(cont);
 					}
+					for (Evento qtd : repEvento.findByStart(sol.getStart())) {
+						if (qtd.getPeriodo().equals(sol.getPeriodo()) || qtd.getPeriodo().equals("4")) {
+							return new ResponseEntity<Object>(HttpStatus.IM_USED);
+						}
+					}
 					if (four) {
 						try {
 							repSolicitacao.save(sol);
@@ -491,7 +503,6 @@ public class SolicitacaoRestController {
 	public List<Solicitacao> buscaSolics(@PathVariable Long id) {
 		return repSolicitacao.findByIdUsuario(id);
 	}
-		
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Object> deletaTarefa(@PathVariable Long id) {
@@ -525,51 +536,51 @@ public class SolicitacaoRestController {
 		Page<Solicitacao> pagina = repSolicitacao.findByIdUsuarioPage(id, pageable);
 		return ResponseEntity.ok(pagina);
 	}
-	
+
 	@RequestMapping(value = "status/{status}", method = RequestMethod.GET)
-	public List<Solicitacao> buscarPorStatus(@PathVariable String status){
+	public List<Solicitacao> buscarPorStatus(@PathVariable String status) {
 		return repSolicitacao.findByStatus(status);
 	}
-	
-	public static String executePost() {
-		  HttpURLConnection connection = null;
-		  
-		  try {
-		    //Create connection
-		    URL url = new URL("https://emailapi-production.up.railway.app/send");
-		    connection = (HttpURLConnection) url.openConnection();
-		    connection.setRequestMethod("POST");
-		    connection.setRequestProperty("Content-Type", 
-		        "application/json");
-		    String jsonInputString = "{nome : Matheus, email : matheuus412@gmail.com}";	 		 		    
-		    connection.setRequestProperty("Accept", "application/json");
-		    connection.setRequestProperty("Content-Language", "en-US");  
-		    connection.setUseCaches(false);
-		    connection.setDoOutput(true);
 
-		    try(OutputStream os = connection.getOutputStream()) {
-		        byte[] input = jsonInputString.getBytes("utf-8");
-		        os.write(input, 0, input.length);			
-		    }
+	public static String executePost(Usuario user, Solicitacao sol) {
+		HttpURLConnection connection = null;
 
-		    //Get Response  
-		    InputStream is = connection.getInputStream();
-		    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-		    StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
-		    String line;
-		    while ((line = rd.readLine()) != null) {
-		      response.append(line);
-		      response.append('\r');
-		    }
-		    rd.close();
-		    return response.toString();
-		  } catch (Exception e) {
-		    e.printStackTrace();
-		    return null;
-		  } finally {
-		    if (connection != null) {
-		      connection.disconnect();
-		    }
-		  }
+		try {
+			// Create connection
+			URL url = new URL("https://emailapi-production.up.railway.app/novaSolicitacao");
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setRequestProperty("Content-Type", "application/json");
+			String jsonInputString = "{\"solicitante\":\"" + user.getNome()
+					+ "\",\"email\":\"matheuus412@gmail.com\",\"data\":\"" + sol.getStart() + "\"}";
+			connection.setRequestProperty("Accept", "application/json");
+			connection.setRequestProperty("Content-Language", "en-US");
+			connection.setUseCaches(false);
+			connection.setDoOutput(true);
+
+			try (OutputStream os = connection.getOutputStream()) {
+				byte[] input = jsonInputString.getBytes("utf-8");
+				os.write(input, 0, input.length);
+			}
+
+			// Get Response
+			InputStream is = connection.getInputStream();
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+			StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+			String line;
+			while ((line = rd.readLine()) != null) {
+				response.append(line);
+				response.append('\r');
+			}
+			rd.close();
+			return response.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
 		}
+	}
 }

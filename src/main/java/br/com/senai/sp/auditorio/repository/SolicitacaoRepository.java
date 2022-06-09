@@ -16,6 +16,9 @@ public interface SolicitacaoRepository extends PagingAndSortingRepository<Solici
 	@Query("SELECT e FROM Solicitacao e WHERE start = :s AND status != 3")
 	public List<Solicitacao> findByStart (@Param("s") String start);
 	
+	@Query("SELECT e FROM Solicitacao e WHERE start = :s AND status = 2")
+	public List<Solicitacao> buscarSolicAndamentos (@Param("s") String start);
+	
 	@Query("SELECT e FROM Solicitacao e WHERE start = :s AND periodo = :p ")
 	public List<Solicitacao> findByStartAndPeriodo (@Param("s") String start,@Param("p") String periodo);
 	
