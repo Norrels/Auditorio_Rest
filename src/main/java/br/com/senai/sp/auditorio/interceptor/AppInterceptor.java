@@ -50,11 +50,15 @@ public class AppInterceptor implements HandlerInterceptor{
 				//	variável para o token
 				String token = request.getHeader("Authorization");
 				// verificar se é um método do professor
-		
+			
 				if (metodo.getMethodAnnotation(Professor.class) != null) {
 					
 					//se o método for privado recupera o token
 					token = request.getHeader("Authorization");
+					if(token == null) {
+						response.sendError(HttpStatus.UNAUTHORIZED.value(), "Acesso Negado");
+						return false;
+					}
 					// cria o algoritmo para assinar
 					Algorithm algoritmo = Algorithm.HMAC256(UsuarioRestController.SECRET);
 					// objeto para verificar o token 
@@ -64,18 +68,21 @@ public class AppInterceptor implements HandlerInterceptor{
 					DecodedJWT jwt = verifier.verify(token);
 					// recupera os dados do payload
 					Map<String, Claim> claims = jwt.getClaims();
-					TipoDeUsuario tipoUsuario = TipoDeUsuario.values()[Integer.parseInt(claims.get("tipo").toString())];
-					if(tipoUsuario == tipoUsuario.PROFESSOR) {
+					System.out.println(claims.get("TipoUser"));
+					if(claims.get("TipoUser").toString().equals("\"professor\"")){
 						return true;
 					} else {
 						response.sendError(HttpStatus.UNAUTHORIZED.value(), "Acesso Negado");
 						return false;
 					}
 					
-				} else {
-					if (metodo.getMethodAnnotation(Administrador.class) != null) {
+				} else if (metodo.getMethodAnnotation(Administrador.class) != null) {
 					//se o método for privado recupera o token
 					token = request.getHeader("Authorization");
+					if(token == null) {
+						response.sendError(HttpStatus.UNAUTHORIZED.value(), "Acesso Negado");
+						return false;
+					}
 					// cria o algoritmo para assinar
 					Algorithm algoritmo = Algorithm.HMAC256(UsuarioRestController.SECRET);
 					// objeto para verificar o token 
@@ -85,16 +92,20 @@ public class AppInterceptor implements HandlerInterceptor{
 					DecodedJWT jwt = verifier.verify(token);
 					// recupera os dados do payload
 					Map<String, Claim> claims = jwt.getClaims();
-					TipoDeUsuario tipoUsuario = TipoDeUsuario.values()[Integer.parseInt(claims.get("tipo").toString())];
-					if(tipoUsuario == tipoUsuario.PROFESSOR) {
+					System.out.println(claims.get("TipoUser"));
+					if(claims.get("TipoUser").toString().equals("\"adm\"")){
 						return true;
 					} else {
 						response.sendError(HttpStatus.UNAUTHORIZED.value(), "Acesso Negado");
 						return false;
 					}
+					
 					
 				} else if (metodo.getMethodAnnotation(Suporte.class) != null) {
-					
+					if(token == null) {
+						response.sendError(HttpStatus.UNAUTHORIZED.value(), "Acesso Negado");
+						return false;
+					}
 					//se o método for privado recupera o token
 					token = request.getHeader("Authorization");
 					// cria o algoritmo para assinar
@@ -106,8 +117,8 @@ public class AppInterceptor implements HandlerInterceptor{
 					DecodedJWT jwt = verifier.verify(token);
 					// recupera os dados do payload
 					Map<String, Claim> claims = jwt.getClaims();
-					TipoDeUsuario tipoUsuario = TipoDeUsuario.values()[Integer.parseInt(claims.get("tipo").toString())];
-					if(tipoUsuario == tipoUsuario.PROFESSOR) {
+					System.out.println(claims.get("TipoUser"));
+					if(claims.get("TipoUser").toString().equals("\"suporte\"")){
 						return true;
 					} else {
 						response.sendError(HttpStatus.UNAUTHORIZED.value(), "Acesso Negado");
@@ -120,7 +131,7 @@ public class AppInterceptor implements HandlerInterceptor{
 				return true;
 			}	
 			}
-		}
+		
 		
 		return true;
 	}

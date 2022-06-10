@@ -39,8 +39,8 @@ public interface UsuarioRepository extends PagingAndSortingRepository<Usuario, L
 	
 	public Usuario findByDataNascimentoAndId(String Data, Long id);
 	
-	@Query("Select u.email from Usuario u where u.tipoUsuario = 1")
-	public Iterable<Usuario> buscaEmailAdm();
+	@Query("Select u.email from Usuario u where u.tipoUsuario = 1 and u.ativo = true")
+	public List<String> buscaEmailAdmOther();
 	
 	public Usuario findByEmail(String email);
 	

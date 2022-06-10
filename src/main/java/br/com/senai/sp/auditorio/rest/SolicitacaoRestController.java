@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +30,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonParser;
 
+import br.com.senai.sp.auditorio.annotation.Administrador;
+import br.com.senai.sp.auditorio.annotation.Professor;
+import br.com.senai.sp.auditorio.annotation.Suporte;
 import br.com.senai.sp.auditorio.model.Erro;
 import br.com.senai.sp.auditorio.model.Evento;
 import br.com.senai.sp.auditorio.model.Solicitacao;
@@ -50,11 +54,13 @@ public class SolicitacaoRestController {
 
 	@Autowired
 	private UsuarioRepository repUsuario;
+	
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public Iterable<Solicitacao> getSolicitacao() {
 		return repSolicitacao.findAll();
 	}
+	
 
 	@RequestMapping(value = "/user/{id}/page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> getSolicitacaoById(@PathVariable("id") Long id, @PathVariable("page") int page) {
@@ -62,18 +68,14 @@ public class SolicitacaoRestController {
 		Page<Solicitacao> pagina = repSolicitacao.findByIdUsuarioall(id, pageable);
 		return ResponseEntity.ok(pagina);
 	}
+	
 
 	@RequestMapping(value = "semId/{id}", method = RequestMethod.GET)
 	public Iterable<Solicitacao> getSolicitacaoSemCertoId(@PathVariable("id") Long id) {
 		return repSolicitacao.buscarSemCertoId(id);
 	}
-
-	/**
-	 * Método utilizado para buscar uma solicitação por id
-	 * 
-	 * @param idSolicitacao
-	 * @return Um evento referente ao Id
-	 */
+	
+	
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	public ResponseEntity<Object> getEventoById(@PathVariable("id") Long idSolicitacao) {
 		Solicitacao s = repSolicitacao.findById(idSolicitacao).get();
@@ -84,35 +86,26 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
+	
 
-	/**
-	 * Método utilizado para lista as solicitações por pagina
-	 * 
-	 * @param page
-	 * @return Um Json com 7 eventos
-	 */
 	@RequestMapping(value = "page/{id}", method = RequestMethod.GET)
 	public ResponseEntity<Object> getElementPages(@PathVariable("id") int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
 		Page<Solicitacao> pagina = repSolicitacao.findAll(pageable);
 		return ResponseEntity.ok(pagina);
 	}
+	
 
-	/**
-	 * Método utilizado no auto complete do buscar no front
-	 * 
-	 * @return Um json com todos usuarios só com o nome é a data
-	 */
 	@RequestMapping(value = "/autocomplete", method = RequestMethod.GET)
-	public Iterable<Solicitacao> autoComplete() {
+  	public Iterable<Solicitacao> autoComplete() {
 		return repSolicitacao.autoComplete();
 	}
-
+	
 	@RequestMapping(value = "/autocomplete/{id}", method = RequestMethod.GET)
 	public Iterable<Solicitacao> autoCompleteByUser(@PathVariable("id") Long id) {
 		return repSolicitacao.autoCompleteByUser(id);
 	}
-
+	
 	@RequestMapping(value = "/buscar/palavra/{palavra-chave}/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscar(@PathVariable("palavra-chave") String palavra,
 			@PathVariable("page") int page) {
@@ -120,7 +113,7 @@ public class SolicitacaoRestController {
 		Page<Solicitacao> pagina = repSolicitacao.buscarPorText(palavra, pageable);
 		return ResponseEntity.ok(pagina);
 	}
-
+	
 	@RequestMapping(value = "/buscar/palavra/{palavra-chave}/user/{user}/page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscarByProf(@PathVariable("palavra-chave") String palavra,
 			@PathVariable("page") int page, @PathVariable("user") Long id) {
@@ -128,9 +121,16 @@ public class SolicitacaoRestController {
 		Page<Solicitacao> pagina = repSolicitacao.buscarPorTextByUser(palavra, pageable, id);
 		return ResponseEntity.ok(pagina);
 	}
-
+	
+	
 	@RequestMapping(value = "/aprovar/{id}", method = RequestMethod.POST)
 	public ResponseEntity<Object> setAprovado(@PathVariable("id") Long id) {
+		Solicitacao solicitacao = repSolicitacao.findById(id).get();
+		 new Thread() { 
+			 public void run() { 
+			 executePostAprovarReprovar(repUsuario.findById(solicitacao.getUsuario().getId()).get(), solicitacao, "Aprovada");	 
+		 }; }.start();
+		
 		boolean four = false;
 		Solicitacao solic = repSolicitacao.findById(id).get();
 		for (Evento eve : repEvento.findByStart(solic.getStart())) {
@@ -187,17 +187,19 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(HttpStatus.IM_USED);
 		}
 	}
-
+	
 	@RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> criarEvento(@RequestBody Solicitacao sol) {
 		Usuario user = repUsuario.findById(sol.getUsuario().getId()).get();
 		
-//		 new Thread() { 
-//			 public void run() { 
-//				 executePost(user, sol); 
-//				 
-//			 }; }.start();
-//		 
+		 new Thread() { 
+			 public void run() { 
+					for (String u  : repUsuario.buscaEmailAdmOther()) {
+						 executePost(user, sol, u); 
+					}
+							 
+		 }; }.start();
+		 
 
 		int cont = 0;
 		boolean tlz = false;
@@ -492,18 +494,12 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
-
-	/**
-	 * Método utilizado para lista as tarefas por usuario
-	 * 
-	 * @param id
-	 * @return todas solicitações de um usuario
-	 */
+	
 	@RequestMapping(value = "buscar/{id}", method = RequestMethod.GET)
 	public List<Solicitacao> buscaSolics(@PathVariable Long id) {
 		return repSolicitacao.findByIdUsuario(id);
 	}
-
+	
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Object> deletaTarefa(@PathVariable Long id) {
 		Solicitacao s = repSolicitacao.findById(id).get();
@@ -521,38 +517,104 @@ public class SolicitacaoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
-
+	
 	@RequestMapping(value = "reprovar/{id}", method = RequestMethod.PUT)
 	public ResponseEntity<Object> reprovarSolic(@PathVariable Long id) {
+		
 		Solicitacao solic = repSolicitacao.findById(id).get();
+		 new Thread() { 
+			 public void run() { 
+			 executePostAprovarReprovar(repUsuario.findById(solic.getUsuario().getId()).get(), solic, "Negada");	 
+		 }; }.start();
+		
 		solic.setStatus("0");
 		repSolicitacao.save(solic);
 		return ResponseEntity.ok(solic);
 	}
-
+	
 	@RequestMapping(value = "buscar/{id}/page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscaSolicPagina(@PathVariable Long id, @PathVariable int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
 		Page<Solicitacao> pagina = repSolicitacao.findByIdUsuarioPage(id, pageable);
 		return ResponseEntity.ok(pagina);
 	}
-
+	
 	@RequestMapping(value = "status/{status}", method = RequestMethod.GET)
 	public List<Solicitacao> buscarPorStatus(@PathVariable String status) {
 		return repSolicitacao.findByStatus(status);
 	}
 
-	public static String executePost(Usuario user, Solicitacao sol) {
+	public static String executePost(Usuario user, Solicitacao sol, String email) {
 		HttpURLConnection connection = null;
-
+		String[] a_ = sol.getStart().split("-");
+		String ano;
+		String mes;
+		String dia;
+		ano = (a_[0]);
+		mes = (a_[1]);
+		dia = (a_[2]);
+		String data = dia + "/" + mes + "/" + ano;
+		
 		try {
+			
 			// Create connection
 			URL url = new URL("https://emailapi-production.up.railway.app/novaSolicitacao");
 			connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestMethod("POST");
 			connection.setRequestProperty("Content-Type", "application/json");
-			String jsonInputString = "{\"solicitante\":\"" + user.getNome()
-					+ "\",\"email\":\"matheuus412@gmail.com\",\"data\":\"" + sol.getStart() + "\"}";
+			String jsonInputString = "{\"solicitante\":\"" + user.getNome()	+ "\",\"email\":[\"" + email + "\"],\"data\":\"" + data + "\"}";
+			System.out.println(jsonInputString);
+			connection.setRequestProperty("Accept", "application/json");
+			connection.setRequestProperty("Content-Language", "en-US");
+			connection.setUseCaches(false);
+			connection.setDoOutput(true);
+
+			try (OutputStream os = connection.getOutputStream()) {
+				byte[] input = jsonInputString.getBytes("utf-8");
+				os.write(input, 0, input.length);
+			}
+
+			// Get Response
+			InputStream is = connection.getInputStream();
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+			StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+			String line;
+			while ((line = rd.readLine()) != null) {
+				response.append(line);
+				response.append('\r');
+			}
+			rd.close();
+			return response.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+		}
+	}
+	
+	public static String executePostAprovarReprovar(Usuario user, Solicitacao sol, String situacao) {
+		
+		HttpURLConnection connection = null;
+		String[] a_ = sol.getStart().split("-");
+		String ano;
+		String mes;
+		String dia;
+		ano = (a_[0]);
+		mes = (a_[1]);
+		dia = (a_[2]);
+		String mes_string = dia + "/" + mes + "/" + ano;
+		
+		try {
+			// Create connection
+			URL url = new URL("https://emailapi-production.up.railway.app/situacaoSolic");
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setRequestProperty("Content-Type", "application/json");
+			String jsonInputString = "{\"nome\":\"" + user.getNome() + "\",\"email\":\"" + user.getEmail() + "\",\"solic\":{\"nome\":\"" + sol.getTitle() + "\", \"situacao\":\"" + situacao + "\", \"data\":\"" + mes_string + "\"}}";
+			System.out.println(jsonInputString);
 			connection.setRequestProperty("Accept", "application/json");
 			connection.setRequestProperty("Content-Language", "en-US");
 			connection.setUseCaches(false);

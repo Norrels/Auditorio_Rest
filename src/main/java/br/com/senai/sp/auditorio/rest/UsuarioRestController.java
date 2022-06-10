@@ -24,6 +24,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
 import br.com.senai.sp.auditorio.annotation.Administrador;
+import br.com.senai.sp.auditorio.annotation.Professor;
 import br.com.senai.sp.auditorio.annotation.Suporte;
 import br.com.senai.sp.auditorio.model.TipoDeUsuario;
 import br.com.senai.sp.auditorio.model.TokenJWT;
@@ -40,17 +41,17 @@ public class UsuarioRestController {
 
 	@Autowired
 	private UsuarioRepository repository;
-
+	
 	@RequestMapping(value = "", method = RequestMethod.GET)
-	public Iterable<Usuario> getEvento() {
+	public Iterable<Usuario> getUsuarios() {
 		return repository.findAll();
 	}
-	
+
 	@RequestMapping(value = "/autocomplete", method = RequestMethod.GET)
 	public Iterable<Usuario> autoComplete (String palavra) {
 		return repository.autoComplete();
 	}
-	@Suporte
+
 	@RequestMapping(value = "/autocompleteAdm", method = RequestMethod.GET)
 	public Iterable<Usuario> autoCompleteAdm (String palavra) {
 		return repository.autoCompleteAdm();
@@ -69,7 +70,7 @@ public class UsuarioRestController {
 			return new ResponseEntity<Usuario>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
+	
 	@RequestMapping(value = "/buscar/{palavra-chave}/{pagina}", method = RequestMethod.GET)
 	public ResponseEntity<Object> buscar(@PathVariable("palavra-chave") String palavra, @PathVariable("pagina") int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
@@ -84,7 +85,6 @@ public class UsuarioRestController {
 		return ResponseEntity.ok(pagina);
 	}
 
-
 	@RequestMapping(value = "page/{page}", method = RequestMethod.GET)
 	public ResponseEntity<Object> getElementPages(@PathVariable("page") int page) {
 		PageRequest pageable = PageRequest.of(page - 1, 7, Sort.by(Sort.Direction.ASC, "id"));
@@ -98,7 +98,7 @@ public class UsuarioRestController {
 		Page<Usuario> pagina = repository.findByTipoUsuario(pageable, TipoDeUsuario.ADMINISTRADOR);
 		return ResponseEntity.ok(pagina);
 	}
-
+	
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
 	public ResponseEntity<Void> deleteUser(@PathVariable("id") Long idUsuario) {
 		try {
@@ -235,11 +235,6 @@ public class UsuarioRestController {
 		}
 		return new ResponseEntity<Usuario>(HttpStatus.BAD_REQUEST);
 	} 
-	
-	
-	@RequestMapping(value = "/email/adms", method = RequestMethod.GET)
-	public Iterable<Usuario> getAdmEmail() {
-		return repository.buscaEmailAdm();
-	}
+
 
 }

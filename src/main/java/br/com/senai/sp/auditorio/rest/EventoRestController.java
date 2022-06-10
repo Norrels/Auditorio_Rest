@@ -22,14 +22,19 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
+import br.com.senai.sp.auditorio.annotation.Administrador;
+import br.com.senai.sp.auditorio.annotation.Professor;
+import br.com.senai.sp.auditorio.annotation.Suporte;
 import br.com.senai.sp.auditorio.model.Erro;
 import br.com.senai.sp.auditorio.model.Evento;
 import br.com.senai.sp.auditorio.model.Solicitacao;
 import br.com.senai.sp.auditorio.model.Usuario;
 import br.com.senai.sp.auditorio.repository.EventoRepository;
 import br.com.senai.sp.auditorio.repository.SolicitacaoRepository;
+import br.com.senai.sp.auditorio.repository.UsuarioRepository;
 
 @CrossOrigin
 @RestController
@@ -41,7 +46,7 @@ public class EventoRestController {
 	
 	@Autowired
 	private SolicitacaoRepository repositorySolic;
-
+	
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public Iterable<Evento> getEvento() {
 		String[] a_ = null;
@@ -184,6 +189,7 @@ public class EventoRestController {
 			return new ResponseEntity<Object>(erro, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> atualizarEvento(@RequestBody Evento e, @PathVariable("id") Long id) {
@@ -389,7 +395,7 @@ public class EventoRestController {
 			return new ResponseEntity<Object>(error, HttpStatus.NOT_FOUND);
 		}
 	}
-
+	
 	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
 	public ResponseEntity<Object> getEventoById(@PathVariable("id") Long idEvento) {
 		Evento e = repository.findById(idEvento).get();
