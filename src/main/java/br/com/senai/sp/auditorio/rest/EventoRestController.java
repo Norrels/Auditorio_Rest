@@ -15,7 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -46,6 +52,9 @@ public class EventoRestController {
 	
 	@Autowired
 	private SolicitacaoRepository repositorySolic;
+	
+	@Autowired
+	private UsuarioRepository repositoryUsuario;
 	
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public Iterable<Evento> getEvento() {
@@ -190,13 +199,69 @@ public class EventoRestController {
 		}
 	}
 	
+public static String executeEditarSolic(Solicitacao s, Usuario user, Evento e, String situacao) {
+		
+		HttpURLConnection connection = null;
+		String[] a_ = s.getStart().split("-");
+		String ano;
+		String mes;
+		String dia;
+		ano = (a_[0]);
+		mes = (a_[1]);
+		dia = (a_[2]);
+		String mes_string = dia + "/" + mes + "/" + ano;
+		
+		try {
+			// Create connection
+			URL url = new URL("https://emailapi-production.up.railway.app/mundacaEvento");
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setRequestProperty("Content-Type", "application/json");
+			String jsonInputString = 
+					"{\"nome\":"+ "\"" + user.getNome() 
+					+ "\",\"email\":\"" + user.getEmail() + 
+					"\", \"evento\":\"" + e.getTitle() + 
+					"\", \"situacao\":\"" + situacao + 
+					"\", \"dia\":\"" + mes_string + "\"}";
+			System.out.println(jsonInputString);
+			connection.setRequestProperty("Accept", "application/json");
+			connection.setRequestProperty("Content-Language", "en-US");
+			connection.setUseCaches(false);
+			connection.setDoOutput(true);
+
+			try (OutputStream os = connection.getOutputStream()) {
+				byte[] input = jsonInputString.getBytes("utf-8");
+				os.write(input, 0, input.length);
+			}
+
+			// Get Response
+			InputStream is = connection.getInputStream();
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+			StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+			String line;
+			while ((line = rd.readLine()) != null) {
+				response.append(line);
+				response.append('\r');
+			}
+			rd.close();
+			return response.toString();
+		} catch (Exception er) {
+			er.printStackTrace();
+			return null;
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+		}
+	}
+	
 
 	@RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> atualizarEvento(@RequestBody Evento e, @PathVariable("id") Long id) {
 		Evento evento = repository.findById(id).get();
 		boolean four = false;
 		boolean ent = false;
-
+		
 		if (evento.getId() > 0) {
 			if (evento.getStart().equals(e.getStart())) {
 				System.out.println("Entoru no if do teste fazer oq");
@@ -270,6 +335,25 @@ public class EventoRestController {
 							return new ResponseEntity<Object>(error, HttpStatus.CONFLICT);
 						} else {
 							try {
+								if(evento.getSolicitacao().getId() != null) {
+									
+									Solicitacao s = repositorySolic.findById(evento.getSolicitacao().getId()).get();
+									
+									e.setUsuario(s.getUsuario());
+									e.setSolicitacao(evento.getSolicitacao());
+									
+									new Thread() { 
+										 public void run() {
+											 ;
+										 executeEditarSolic(s ,repositoryUsuario.findById(e.getUsuario().getId()).get(), evento, "editado");	 
+									 }; }.start();
+									 
+									repository.save(e);
+									s.setSolicitacao(e.getTitle(), e.getPeriodo(), e.getStart(), e.getDescription(), e.getColor(), s.getStatus());
+									repositorySolic.save(s);
+									
+									return ResponseEntity.ok().build();
+								}
 								repository.save(e);
 								return ResponseEntity.ok().build();
 							} catch (Exception e2) {
@@ -362,6 +446,43 @@ public class EventoRestController {
 						if (tlz) {
 							return new ResponseEntity<Object>(HttpStatus.IM_USED);
 						} else {
+							
+							if(evento.getSolicitacao().getId() != null) {
+								
+								Solicitacao s = repositorySolic.findById(evento.getSolicitacao().getId()).get();
+								
+								e.setUsuario(s.getUsuario());
+								e.setSolicitacao(evento.getSolicitacao());
+								
+								new Thread() { 
+									 public void run() {
+										 ;
+									 executeEditarSolic(s, repositoryUsuario.findById(e.getUsuario().getId()).get(), evento, "editado");	 
+								 }; }.start();
+								 
+								repository.save(e);
+								s.setSolicitacao(e.getTitle(), e.getPeriodo(), e.getStart(), e.getDescription(), e.getColor(), s.getStatus());
+								repositorySolic.save(s);
+								
+								return ResponseEntity.ok().build();
+							}
+							/* if(evento.getSolicitacao().getId() != null) {
+								
+								Solicitacao s = repositorySolic.findById(evento.getSolicitacao().getId()).get();
+								
+								e.setUsuario(s.getUsuario());
+								e.setSolicitacao(evento.getSolicitacao());
+								
+								new Thread() { 
+									 public void run() {
+										 ;
+									 executeEditarSolic(repositoryUsuario.findById(e.getUsuario().getId()).get(), s, "Editada");	 
+								 }; }.start();
+								
+								repository.save(e);
+								
+								return ResponseEntity.ok().build();
+							} */
 							try {
 								System.err.println(" PASSOU NO SALVAR ");
 								repository.save(e);
@@ -407,13 +528,74 @@ public class EventoRestController {
 		}
 	}
 
+public static String executeDeletarSolic(Usuario user, Evento e, String situacao) {
+		
+		HttpURLConnection connection = null;
+		String[] a_ = e.getStart().split("-");
+		String ano;
+		String mes;
+		String dia;
+		ano = (a_[0]);
+		mes = (a_[1]);
+		dia = (a_[2]);
+		String mes_string = dia + "/" + mes + "/" + ano;
+		
+		try {
+			// Create connection
+			URL url = new URL("https://emailapi-production.up.railway.app/mundacaEvento");
+			connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("POST");
+			connection.setRequestProperty("Content-Type", "application/json");
+			String jsonInputString = 
+					"{\"nome\":"+ "\"" + user.getNome() 
+					+ "\",\"email\":\"" + user.getEmail() + 
+					"\", \"evento\":\"" + e.getTitle() + 
+					"\", \"situacao\":\"" + situacao + 
+					"\", \"dia\":\"" + mes_string + "\"}";
+			System.out.println(jsonInputString);
+			connection.setRequestProperty("Accept", "application/json");
+			connection.setRequestProperty("Content-Language", "en-US");
+			connection.setUseCaches(false);
+			connection.setDoOutput(true);
+
+			try (OutputStream os = connection.getOutputStream()) {
+				byte[] input = jsonInputString.getBytes("utf-8");
+				os.write(input, 0, input.length);
+			}
+
+			// Get Response
+			InputStream is = connection.getInputStream();
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+			StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+			String line;
+			while ((line = rd.readLine()) != null) {
+				response.append(line);
+				response.append('\r');
+			}
+			rd.close();
+			return response.toString();
+		} catch (Exception er) {
+			er.printStackTrace();
+			return null;
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+		}
+	}
+	
 	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
 	public ResponseEntity<Object> deletaTarefa(@PathVariable Long id) {
 		Evento e = repository.findById(id).get();
+		if(e.getSolicitacao().getId() != null) {
+			new Thread() { 
+				 public void run() {
+					 executeDeletarSolic(repositoryUsuario.findById(e.getUsuario().getId()).get(), e, "excluido");	 
+			 }; }.start();
+		}
 		if (e.getId() > 0) {
 			try {
 				repository.deleteById(id);
-
 				repositorySolic.deleteById(e.getSolicitacao().getId());
 				return ResponseEntity.ok().build();
 			} catch (Exception e2) {

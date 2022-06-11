@@ -22,6 +22,15 @@ public class Solicitacao {
 	private String color;
 	private String status;
 	
+	public void setSolicitacao(String title, String periodo, String start, String description, String color, String status) {
+		this.title = title;
+		this.periodo = periodo;
+		this.start = start;
+		this.description = description;
+		this.color = color;
+		this.status = status;
+	}
+	
 	@ManyToOne
 	private Usuario usuario;
 

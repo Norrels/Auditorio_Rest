@@ -22,9 +22,12 @@ public interface EventoRepository extends PagingAndSortingRepository<Evento, Lon
 	@Query("SELECT e FROM Evento e WHERE periodo = :s")
 	public List<Evento> findByPeriodo (@Param("s") String start);
 	
-	@Query("SELECT e FROM Evento e WHERE e.title LIKE %:t% or e.periodo LIKE %:t% or e.start LIKE %:t% or e.description LIKE %:t% or e.usuario.nome LIKE %:t%")
+	@Query("SELECT e FROM Evento e WHERE e.title LIKE %:t% or e.periodo LIKE %:t% or e.start LIKE %:t% or e.description LIKE %:t% or e.usuario.nome LIKE %:t% order by e.start desc")
 	public Page<Evento> buscarPorText (@Param("t") String palavra, Pageable page);
 	
 	@Query("SELECT e.title, e.start, usuario.nome FROM Evento e")
 	public Iterable<Evento> autoComplete ();
+	
+	@Query("SELECT e FROM Evento e order by e.start desc")
+	public Page<Evento> findAll(Pageable page);
 }

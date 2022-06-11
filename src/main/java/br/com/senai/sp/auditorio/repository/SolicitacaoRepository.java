@@ -28,7 +28,7 @@ public interface SolicitacaoRepository extends PagingAndSortingRepository<Solici
 	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s AND status = 2")
 	public List<Solicitacao> findByIdUsuario (@Param("s") Long id);
 	
-	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s")
+	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s order by e.start desc")
 	public Page<Solicitacao> findByIdUsuarioall (@Param("s") Long id, Pageable page);
 	
 	@Query("SELECT e FROM Solicitacao e WHERE usuario.id = :s AND status = 2")
@@ -52,5 +52,6 @@ public interface SolicitacaoRepository extends PagingAndSortingRepository<Solici
 	public Solicitacao findByTitleAndStartAndPeriodoAndDescription(String name, String data, String periodo, String description);
 	
 	public List<Solicitacao> findByStatus(String status);
+	
 	
 }
