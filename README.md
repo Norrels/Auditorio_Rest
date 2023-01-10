@@ -1,4 +1,6 @@
-![Slide 16_9 - 4](https://user-images.githubusercontent.com/94193637/211572824-5c12ae2f-2ad9-44b2-8a5e-1ccbd71734d7.png)
+![Slide 16_9 - 5 (2)](https://user-images.githubusercontent.com/94193637/211607874-5ba740a2-3db2-4632-be4a-52fdd96b6790.png#gh-light-mode-only)
+![Slide 16_9 - 4 (1)](https://user-images.githubusercontent.com/94193637/211607936-ab3c4a1f-c40e-4039-ad3f-d4e8e47c5140.png#gh-dark-mode-only)
+
 
 
 ## Introdução 
